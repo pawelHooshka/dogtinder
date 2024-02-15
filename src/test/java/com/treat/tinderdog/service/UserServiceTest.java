@@ -23,6 +23,7 @@ import com.treat.tinderdog.model.UserLikes;
 import com.treat.tinderdog.model.UserMatches;
 import com.treat.tinderdog.service.exception.LikeAlreadyExistsException;
 import com.treat.tinderdog.service.exception.NotAuthorisedToAccessResourceException;
+import com.treat.tinderdog.service.exception.UserLikeDoesNotExistException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -225,5 +226,34 @@ public class UserServiceTest {
         userService.unlikeProfile(userDetails, LIKE_ID);
         verify(userLikesRepository).delete(eq(userLike));
         verify(userMatchesRepository, never()).delete(any());
+    }
+
+    @Test
+    void testUnlikeProfileAndRemoveMatch() {
+        final UserLike userLike = userLike(USER_ID, OTHER_USER_ID, LIKE_ID);
+        final UserMatch userMatch = userMatch(OTHER_USER_ID, USER_ID, MATCH_ID);
+        final CustomUserDetails userDetails = new CustomUserDetails(user(USER_ID, USERNAME, PASSWORD, 1));
+
+        when(userLikesRepository.findById(eq(LIKE_ID))).thenReturn(Optional.of(userLike));
+        when(userMatchesRepository.findAllByFirstUserIdAndSecondUserId(any(), any()))
+                .thenReturn(Optional.of(userMatch));
+        userService.unlikeProfile(userDetails, LIKE_ID);
+        verify(userLikesRepository).delete(eq(userLike));
+        verify(userMatchesRepository).delete(any());
+    }
+
+    @Test
+    void testUnlikeProfileUserLikeNotFound() {
+        final UserLike userLike = userLike(USER_ID, OTHER_USER_ID, LIKE_ID);
+        final CustomUserDetails userDetails = new CustomUserDetails(user(USER_ID, USERNAME, PASSWORD, 1));
+
+        when(userLikesRepository.findById(eq(LIKE_ID))).thenReturn(Optional.empty());
+
+        final UserLikeDoesNotExistException exception =
+                assertThrows(UserLikeDoesNotExistException.class,
+                        () -> userService.unlikeProfile(userDetails, LIKE_ID));
+        verify(userLikesRepository, never()).delete(eq(userLike));
+        verify(userMatchesRepository, never()).delete(any());
+        assertNotNull(exception);
     }
 }
