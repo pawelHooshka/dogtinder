@@ -215,4 +215,15 @@ public class UserServiceTest {
         verify(userLikesRepository, never()).save(any());
         verify(userMatchesRepository, never()).save(any());
     }
+
+    @Test
+    void testUnlikeProfile() {
+        final CustomUserDetails userDetails = new CustomUserDetails(user(USER_ID, USERNAME, PASSWORD, 1));
+        final UserLike userLike = userLike(USER_ID, LIKE_ID);
+        when(userLikesRepository.findById(eq(LIKE_ID))).thenReturn(Optional.of(userLike));
+        when(userMatchesRepository.findAllByFirstUserIdAndSecondUserId(any(), any())).thenReturn(Optional.empty());
+        userService.unlikeProfile(userDetails, LIKE_ID);
+        verify(userLikesRepository).delete(eq(userLike));
+        verify(userMatchesRepository, never()).delete(any());
+    }
 }
