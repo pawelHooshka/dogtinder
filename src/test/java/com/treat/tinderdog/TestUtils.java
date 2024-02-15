@@ -19,11 +19,27 @@ public class TestUtils {
         return userLike;
     }
 
+    public static UserLike userLike(final long userId, final long otherUserId, final UUID likeId) {
+        final UserLike userLike = new UserLike();
+        userLike.setId(likeId);
+        userLike.setUserId(userId);
+        userLike.setLikedUserId(otherUserId);
+        return userLike;
+    }
+
     public static UserMatch userMatch(final long userId, final UUID matchId) {
         final UserMatch userMatch = new UserMatch();
         userMatch.setId(matchId);
         userMatch.setFirstUserId(userId);
         userMatch.setSecondUserId(1L);
+        return userMatch;
+    }
+
+    public static UserMatch userMatch(final long userId, final long secondUserId, final UUID matchId) {
+        final UserMatch userMatch = new UserMatch();
+        userMatch.setId(matchId);
+        userMatch.setFirstUserId(userId);
+        userMatch.setSecondUserId(secondUserId);
         return userMatch;
     }
 

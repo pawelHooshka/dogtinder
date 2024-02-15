@@ -7,8 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.treat.tinderdog.data.CustomUserDetails;
 import com.treat.tinderdog.data.User;
@@ -22,6 +21,7 @@ import com.treat.tinderdog.data.repository.UserRepository;
 import com.treat.tinderdog.model.UserLikeWithPossibleMatchResponse;
 import com.treat.tinderdog.model.UserLikes;
 import com.treat.tinderdog.model.UserMatches;
+import com.treat.tinderdog.service.exception.LikeAlreadyExistsException;
 import com.treat.tinderdog.service.exception.NotAuthorisedToAccessResourceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -185,6 +185,34 @@ public class UserServiceTest {
         final UserLikeWithPossibleMatchResponse response =
                 new UserLikeWithPossibleMatchResponse(USER_ID, OTHER_USER_ID, LIKE_ID, MATCH_ID, null, null);
         final CustomUserDetails userDetails = new CustomUserDetails(user(USER_ID, USERNAME, PASSWORD, 1));
+        when(userLikesRepository.findByUserIdAndLikedUserId(eq(USER_ID), eq(OTHER_USER_ID)))
+                .thenReturn(Optional.empty());
+        when(userLikesRepository.findByUserIdAndLikedUserId(eq(OTHER_USER_ID), eq(USER_ID)))
+                .thenReturn(Optional.of(userLike(OTHER_USER_ID, USER_ID, LIKE_ID)));
 
+        final UserLike savedUserLike = userLike(USER_ID, OTHER_USER_ID, LIKE_ID);
+        final UserMatch savedUserMatch = userMatch(USER_ID, OTHER_USER_ID, MATCH_ID);
+
+        when(userLikesRepository.save(any())).thenReturn(savedUserLike);
+        when(userMatchesRepository.save(any())).thenReturn(savedUserMatch);
+        assertThat(userService.likeProfile(userDetails, OTHER_USER_ID), is(response));
+        verify(userLikesRepository).save(eq(userLike(USER_ID, OTHER_USER_ID, null)));
+        verify(userMatchesRepository).save(eq(userMatch(USER_ID, OTHER_USER_ID, null)));
+    }
+
+    @Test
+    void testLikeProfileLikeAlreadyExists() {
+        final UserLike savedUserLike = userLike(USER_ID, OTHER_USER_ID, LIKE_ID);
+
+        final CustomUserDetails userDetails = new CustomUserDetails(user(USER_ID, USERNAME, PASSWORD, 1));
+        when(userLikesRepository.findByUserIdAndLikedUserId(eq(USER_ID), eq(OTHER_USER_ID)))
+                .thenReturn(Optional.of(savedUserLike));
+
+        final LikeAlreadyExistsException exception =
+                assertThrows(LikeAlreadyExistsException.class,
+                        () -> userService.likeProfile(userDetails, OTHER_USER_ID));
+        assertNotNull(exception);
+        verify(userLikesRepository, never()).save(any());
+        verify(userMatchesRepository, never()).save(any());
     }
 }
