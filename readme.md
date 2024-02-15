@@ -1,5 +1,7 @@
 (this repo is public for now)
 
+Transaction configuration is missing but in Spring boot 3.2 - transactions are already enabled with Spring data.
+
 I had few problems with AWS, could not ssh for a while tried few thing and so I lost some time on tasks related to deployment.
 
 The application uses basic authentication and it doesn't use https but only http - obviously in the production we would use https and I would have invested more effort into implementing proper security. I have ran out of time to add Cucumber Component BDT tests and unit test coverage can be extended.
